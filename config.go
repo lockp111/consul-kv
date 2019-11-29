@@ -1,4 +1,4 @@
-package consul
+package kv
 
 import (
 	"encoding/json"
@@ -114,6 +114,16 @@ func (c *Config) removeWatcher(path string) {
 	defer c.Unlock()
 
 	delete(c.watchers, c.path(path))
+}
+
+func (c *Config) cleanWatcher() {
+	c.Lock()
+	defer c.Unlock()
+
+	for k, w := range c.watchers {
+		w.Stop()
+		delete(c.watchers, k)
+	}
 }
 
 func (c *Config) watcherLoop(path string) {
@@ -261,14 +271,21 @@ func (c *Config) WatchStart(path string, handler func(*Result)) error {
 }
 
 // WatchStop ...
-func (c *Config) WatchStop(path string) {
-	wp := c.getWatcher(path)
-	if wp == nil {
-		c.loger.WithField("path", path).Info("watcher already stop")
+func (c *Config) WatchStop(path ...string) {
+	if len(path) == 0 {
+		c.cleanWatcher()
 		return
 	}
 
-	wp.Stop()
-	c.removeWatcher(path)
-	c.loger.WithField("path", path).Info("watcher stopping...")
+	for _, p := range path {
+		wp := c.getWatcher(p)
+		if wp == nil {
+			c.loger.WithField("path", p).Info("watcher already stop")
+			return
+		}
+
+		wp.Stop()
+		c.removeWatcher(p)
+		c.loger.WithField("path", p).Info("watcher stopping...")
+	}
 }
