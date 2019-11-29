@@ -26,6 +26,7 @@ func NewConfig(opts ...Option) *Config {
 	c := &Config{
 		conf:     api.DefaultConfig(),
 		watchers: make(map[string]*watcher),
+		loger:    log.New(),
 	}
 
 	for _, o := range opts {
@@ -66,12 +67,20 @@ func WithToken(token string) Option {
 	}
 }
 
+// WithLoger ...
+func WithLoger(loger *log.Logger) Option {
+	return func(c *Config) {
+		c.loger = loger
+	}
+}
+
 // Config ...
 type Config struct {
 	prefix   string
 	kv       *api.KV
 	conf     *api.Config
 	watchers map[string]*watcher
+	loger    *log.Logger
 	sync.RWMutex
 }
 
@@ -108,20 +117,20 @@ func (c *Config) removeWatcher(path string) {
 }
 
 func (c *Config) watcherLoop(path string) {
-	log.WithField("path", path).Info("watcher start...")
+	c.loger.WithField("path", path).Info("watcher start...")
 
 	for {
 		wp := c.getWatcher(path)
 		if wp == nil {
-			log.WithField("path", path).Info("watcher stop")
+			c.loger.WithField("path", path).Info("watcher stop")
 			return
 		}
 
 		if err := wp.RunWithConfig(c.conf.Address, c.conf); err != nil {
-			log.WithField("path", path).Warning("watcher error")
+			c.loger.WithField("path", path).Warning("watcher error")
 		}
 
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 3)
 	}
 }
 
@@ -233,7 +242,7 @@ func (c *Config) Delete(path string) error {
 }
 
 // WatchStart ...
-func (c *Config) WatchStart(path string, handler WatchFunc) error {
+func (c *Config) WatchStart(path string, handler func(*Result)) error {
 	if err := c.checkWatcher(path); err != nil {
 		return err
 	}
@@ -255,11 +264,11 @@ func (c *Config) WatchStart(path string, handler WatchFunc) error {
 func (c *Config) WatchStop(path string) {
 	wp := c.getWatcher(path)
 	if wp == nil {
-		log.WithField("path", path).Info("watcher already stop")
+		c.loger.WithField("path", path).Info("watcher already stop")
 		return
 	}
 
 	wp.Stop()
 	c.removeWatcher(path)
-	log.WithField("path", path).Info("watcher stopping...")
+	c.loger.WithField("path", path).Info("watcher stopping...")
 }

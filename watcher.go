@@ -10,9 +10,6 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// WatchFunc ...
-type WatchFunc func(*Result)
-
 func newWatcher(wp *watch.Plan) *watcher {
 	return &watcher{
 		Plan:       wp,
@@ -44,7 +41,7 @@ func (w *watcher) updateValue(path string, value []byte) {
 	}
 }
 
-func (w *watcher) hybridHandler(prefix string, handler WatchFunc) {
+func (w *watcher) hybridHandler(prefix string, handler func(*Result)) {
 	w.HybridHandler = func(bp watch.BlockingParamVal, data interface{}) {
 		kvPairs := data.(api.KVPairs)
 		ret := &Result{}
