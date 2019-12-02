@@ -1,6 +1,7 @@
 package kv
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/tidwall/gjson"
@@ -18,15 +19,15 @@ func (r *Result) Err() error {
 	return r.err
 }
 
-// GetField ...
-func (r *Result) GetField(path string) *Result {
+// Get ...
+func (r *Result) Get(path string) *Result {
 	r.g = r.g.Get(path)
 	return r
 }
 
 // Scan ...
 func (r *Result) Scan(x interface{}) error {
-	return gjson.Unmarshal([]byte(r.g.Raw), x)
+	return json.Unmarshal([]byte(r.g.Raw), x)
 }
 
 // Float ...

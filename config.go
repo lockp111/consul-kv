@@ -251,8 +251,8 @@ func (c *Config) Delete(path string) error {
 	return err
 }
 
-// WatchStart ...
-func (c *Config) WatchStart(path string, handler func(*Result)) error {
+// Watch ...
+func (c *Config) Watch(path string, handler func(*Result)) error {
 	if err := c.checkWatcher(path); err != nil {
 		return err
 	}
@@ -270,8 +270,8 @@ func (c *Config) WatchStart(path string, handler func(*Result)) error {
 	return nil
 }
 
-// WatchStop ...
-func (c *Config) WatchStop(path ...string) {
+// StopWatch ...
+func (c *Config) StopWatch(path ...string) {
 	if len(path) == 0 {
 		c.cleanWatcher()
 		return
@@ -285,6 +285,10 @@ func (c *Config) WatchStop(path ...string) {
 		}
 
 		wp.Stop()
+
+		for !wp.IsStopped() {
+		}
+
 		c.removeWatcher(p)
 		c.loger.WithField("path", p).Info("watcher stopping...")
 	}

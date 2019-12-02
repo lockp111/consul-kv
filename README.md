@@ -19,6 +19,7 @@ conf := NewConfig(
 )
 
 ```
+
 ### Connect
 ```golang
 if err := conf.Connect();err !=nil {
@@ -88,17 +89,27 @@ t := conf.Get(key).Time()
 
 // get time with default
 t := conf.Get(key).Time(defaultTime)
+
+// get nested key values
+conf.Get(key).Get(nextKey1).Get(nextKey2).String()
 ```
 
-### Watch Start
+### Watch
 ```golang
-conf.WatchStart(path, func(r *Result){
+conf.Watch(path, func(r *Result){
     r.Scan(x)
 })
 
 ```
 
-### Watch Stop
+### Stop Watch
 ```golang
-conf.WatchStop(path)
+// stop single watcher
+conf.StopWatch(path)
+
+// stop multiple watcher
+conf.StopWatch(path1, path2)
+
+// stop all watcher
+conf.StopWatch()
 ```
