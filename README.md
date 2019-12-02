@@ -113,3 +113,7 @@ conf.StopWatch(path1, path2)
 // stop all watcher
 conf.StopWatch()
 ```
+
+## Next Features:
+- Distributed lock
+- Transactions
