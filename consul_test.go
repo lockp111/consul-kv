@@ -36,14 +36,15 @@ func TestPut2(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	ret := s.Get("test")
+	ret := s.Get("test2")
 	if ret.Err() != nil {
 		t.Error(ret.Err())
 		return
 	}
 
-	t.Log(ret.Get("Test").String())
-	t.Fail()
+	if ret.Get("Test").String() != "put2" {
+		t.Error("get value error")
+	}
 }
 
 func TestScan(t *testing.T) {
@@ -55,11 +56,16 @@ func TestScan(t *testing.T) {
 		LogRsp   bool
 	}
 
-	ret := s.Get("c2c")
-	m := make(map[string]*Permission)
-	ret.Get("Permissions").Scan(&m)
-	t.Log(m)
-	t.Fail()
+	m := make(map[string]interface{})
+	err := s.Get("test1").Scan(&m)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if len(m) == 0 {
+		t.Error("scan value error")
+	}
 }
 
 func TestList(t *testing.T) {
@@ -72,5 +78,4 @@ func TestList(t *testing.T) {
 	for _, v := range ls {
 		t.Log(v)
 	}
-	t.Fail()
 }

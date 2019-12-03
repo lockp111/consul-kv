@@ -11,11 +11,13 @@ func Init(opts ...Option) error {
 	return kvConf.Connect()
 }
 
-// Reset ...
-func Reset(opts ...Option) error {
-	kvConf.StopWatch()
-	kvConf = NewConfig(opts...)
-	return kvConf.Connect()
+// SetOptions ...
+func SetOptions(opts ...Option) error {
+	for _, o := range opts {
+		o(kvConf)
+	}
+
+	return kvConf.reconnect()
 }
 
 // Put ...

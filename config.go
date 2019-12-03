@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/consul/api"
-	"github.com/hashicorp/consul/api/watch"
 	log "github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
 )
@@ -126,21 +125,40 @@ func (c *Config) cleanWatcher() {
 	}
 }
 
+func (c *Config) getAllWatchers() []*watcher {
+	c.RLock()
+	defer c.RUnlock()
+
+	watchers := make([]*watcher, 0, len(c.watchers))
+	for _, w := range c.watchers {
+		watchers = append(watchers, w)
+	}
+
+	return watchers
+}
+
 func (c *Config) watcherLoop(path string) {
 	c.loger.WithField("path", path).Info("watcher start...")
 
+	w := c.getWatcher(path)
+	if w == nil {
+		c.loger.WithField("path", path).Error("watcher not found")
+		return
+	}
+
 	for {
-		wp := c.getWatcher(path)
-		if wp == nil {
+		if err := w.run(c.conf.Address, c.conf); err != nil {
+			c.loger.WithField("path", path).WithError(err).Warning("watcher connect error")
+			time.Sleep(time.Second * 3)
+		}
+
+		w = c.getWatcher(path)
+		if w == nil {
 			c.loger.WithField("path", path).Info("watcher stop")
 			return
 		}
 
-		if err := wp.RunWithConfig(c.conf.Address, c.conf); err != nil {
-			c.loger.WithField("path", path).Warning("watcher error")
-		}
-
-		time.Sleep(time.Second * 3)
+		c.loger.WithField("path", path).Warning("watcher reconnect...")
 	}
 }
 
@@ -174,6 +192,16 @@ func (c *Config) list() ([]string, error) {
 	}
 
 	return list, nil
+}
+
+func (c *Config) reconnect() error {
+	watchMap := c.getAllWatchers()
+
+	for _, w := range watchMap {
+		w.stop()
+	}
+
+	return c.Connect()
 }
 
 // Connect ...
@@ -257,13 +285,12 @@ func (c *Config) Watch(path string, handler func(*Result)) error {
 		return err
 	}
 
-	wp, err := watch.Parse(map[string]interface{}{"type": "keyprefix", "prefix": c.path(path)})
+	watcher, err := newWatcher(c.path(path))
 	if err != nil {
 		return err
 	}
 
-	watcher := newWatcher(wp)
-	watcher.hybridHandler(c.prefix, handler)
+	watcher.setHybridHandler(c.prefix, handler)
 	c.addWatcher(path, watcher)
 
 	go c.watcherLoop(path)
@@ -284,12 +311,10 @@ func (c *Config) StopWatch(path ...string) {
 			return
 		}
 
-		wp.Stop()
-
+		c.loger.WithField("path", p).Info("watcher stopping...")
+		c.removeWatcher(p)
+		wp.stop()
 		for !wp.IsStopped() {
 		}
-
-		c.removeWatcher(p)
-		c.loger.WithField("path", p).Info("watcher stopping...")
 	}
 }

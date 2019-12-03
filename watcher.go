@@ -10,16 +10,26 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-func newWatcher(wp *watch.Plan) *watcher {
+func newWatcher(path string) (*watcher, error) {
+	wp, err := watch.Parse(map[string]interface{}{"type": "keyprefix", "prefix": path})
+	if err != nil {
+		return nil, err
+	}
+
 	return &watcher{
 		Plan:       wp,
 		lastValues: make(map[string][]byte),
-	}
+		stopChan:   make(chan bool),
+		err:        make(chan error),
+	}, nil
 }
 
 type watcher struct {
 	*watch.Plan
-	lastValues map[string][]byte
+	lastValues    map[string][]byte
+	hybridHandler watch.HybridHandlerFunc
+	stopChan      chan bool
+	err           chan error
 	sync.RWMutex
 }
 
@@ -41,8 +51,8 @@ func (w *watcher) updateValue(path string, value []byte) {
 	}
 }
 
-func (w *watcher) hybridHandler(prefix string, handler func(*Result)) {
-	w.HybridHandler = func(bp watch.BlockingParamVal, data interface{}) {
+func (w *watcher) setHybridHandler(prefix string, handler func(*Result)) {
+	w.hybridHandler = func(bp watch.BlockingParamVal, data interface{}) {
 		kvPairs := data.(api.KVPairs)
 		ret := &Result{}
 
@@ -64,4 +74,24 @@ func (w *watcher) hybridHandler(prefix string, handler func(*Result)) {
 			handler(ret)
 		}
 	}
+}
+
+func (w *watcher) run(address string, conf *api.Config) error {
+	w.Plan.HybridHandler = w.hybridHandler
+
+	go func() {
+		w.err <- w.RunWithConfig(address, conf)
+	}()
+
+	select {
+	case err := <-w.err:
+		return err
+	case <-w.stopChan:
+		w.Stop()
+		return nil
+	}
+}
+
+func (w *watcher) stop() {
+	w.stopChan <- true
 }
