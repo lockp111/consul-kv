@@ -61,7 +61,7 @@ i := conf.Get(key).Int()
 i := conf.Get(key).Int(defaultInt)
 
 // get uint
-uInt := Time.Get(key).Uint()
+uInt := conf.Get(key).Uint()
 
 // get uint with default
 uInt := conf.Get(key).Uint(defaultUint)
