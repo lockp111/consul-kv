@@ -87,7 +87,7 @@ func (c *Config) checkWatcher(path string) error {
 	c.RLock()
 	defer c.RUnlock()
 
-	if _, ok := c.watchers[c.path(path)]; ok {
+	if _, ok := c.watchers[c.absPath(path)]; ok {
 		return errors.New("watch path already exist")
 	}
 
@@ -98,21 +98,21 @@ func (c *Config) getWatcher(path string) *watcher {
 	c.RLock()
 	defer c.RUnlock()
 
-	return c.watchers[c.path(path)]
+	return c.watchers[c.absPath(path)]
 }
 
 func (c *Config) addWatcher(path string, w *watcher) {
 	c.Lock()
 	defer c.Unlock()
 
-	c.watchers[c.path(path)] = w
+	c.watchers[c.absPath(path)] = w
 }
 
 func (c *Config) removeWatcher(path string) {
 	c.Lock()
 	defer c.Unlock()
 
-	delete(c.watchers, c.path(path))
+	delete(c.watchers, c.absPath(path))
 }
 
 func (c *Config) cleanWatcher() {
@@ -162,7 +162,7 @@ func (c *Config) watcherLoop(path string) {
 	}
 }
 
-func (c *Config) path(keys ...string) string {
+func (c *Config) absPath(keys ...string) string {
 	if len(keys) == 0 {
 		return c.prefix
 	}
@@ -227,7 +227,7 @@ func (c *Config) Put(path string, value interface{}) error {
 		data = []byte(fmt.Sprintf("%v", value))
 	}
 
-	p := &api.KVPair{Key: c.path(path), Value: data}
+	p := &api.KVPair{Key: c.absPath(path), Value: data}
 	_, err = c.kv.Put(p, nil)
 	return err
 }
@@ -235,7 +235,7 @@ func (c *Config) Put(path string, value interface{}) error {
 // Get ...
 func (c *Config) Get(keys ...string) (ret *Result) {
 	var (
-		path   = c.path(keys...) + "/"
+		path   = c.absPath(keys...) + "/"
 		fields []string
 	)
 
@@ -275,7 +275,7 @@ func (c *Config) Get(keys ...string) (ret *Result) {
 
 // Delete ...
 func (c *Config) Delete(path string) error {
-	_, err := c.kv.Delete(c.path(path), nil)
+	_, err := c.kv.Delete(c.absPath(path), nil)
 	return err
 }
 
@@ -285,7 +285,7 @@ func (c *Config) Watch(path string, handler func(*Result)) error {
 		return err
 	}
 
-	watcher, err := newWatcher(c.path(path))
+	watcher, err := newWatcher(c.absPath(path))
 	if err != nil {
 		return err
 	}
