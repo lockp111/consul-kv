@@ -13,10 +13,6 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-func init() {
-	gjson.UnmarshalValidationEnabled(true)
-}
-
 // Option ...
 type Option func(opt *Config)
 
