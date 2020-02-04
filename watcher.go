@@ -19,8 +19,8 @@ func newWatcher(path string) (*watcher, error) {
 	return &watcher{
 		Plan:       wp,
 		lastValues: make(map[string][]byte),
-		stopChan:   make(chan bool),
-		err:        make(chan error),
+		stopChan:   make(chan bool, 1),
+		err:        make(chan error, 1),
 	}, nil
 }
 
