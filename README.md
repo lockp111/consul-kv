@@ -1,5 +1,5 @@
 # consul-kv
-A consul kv tookit for golang
+A consul key/value tool for golang
 
 ## Usage
 
