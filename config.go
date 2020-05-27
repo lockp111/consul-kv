@@ -2,7 +2,6 @@ package kv
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -79,12 +78,13 @@ type Config struct {
 	sync.RWMutex
 }
 
-func (c *Config) checkWatcher(path string) error {
+// CheckWatcher ...
+func (c *Config) CheckWatcher(path string) error {
 	c.RLock()
 	defer c.RUnlock()
 
 	if _, ok := c.watchers[c.absPath(path)]; ok {
-		return errors.New("watch path already exist")
+		return ErrAlreadyWatch
 	}
 
 	return nil
@@ -97,11 +97,16 @@ func (c *Config) getWatcher(path string) *watcher {
 	return c.watchers[c.absPath(path)]
 }
 
-func (c *Config) addWatcher(path string, w *watcher) {
+func (c *Config) addWatcher(path string, w *watcher) error {
 	c.Lock()
 	defer c.Unlock()
 
+	if _, ok := c.watchers[c.absPath(path)]; ok {
+		return ErrAlreadyWatch
+	}
+
 	c.watchers[c.absPath(path)] = w
+	return nil
 }
 
 func (c *Config) removeWatcher(path string) {
@@ -204,7 +209,7 @@ func (c *Config) reconnect() error {
 func (c *Config) Connect() error {
 	client, err := api.NewClient(c.conf)
 	if err != nil {
-		return err
+		return fmt.Errorf("connect fail: %w", err)
 	}
 
 	c.kv = client.KV()
@@ -225,7 +230,10 @@ func (c *Config) Put(path string, value interface{}) error {
 
 	p := &api.KVPair{Key: c.absPath(path), Value: data}
 	_, err = c.kv.Put(p, nil)
-	return err
+	if err != nil {
+		return fmt.Errorf("put fail: %w", err)
+	}
+	return nil
 }
 
 // Get ...
@@ -238,13 +246,13 @@ func (c *Config) Get(keys ...string) (ret *Result) {
 	ret = &Result{}
 	ks, err := c.list()
 	if err != nil {
-		ret.err = err
+		ret.err = fmt.Errorf("get list fail: %w", err)
 		return
 	}
 
 	for _, k := range ks {
 		if !strings.HasPrefix(path, k+"/") {
-			ret.err = errors.New("key not found")
+			ret.err = ErrKeyNotFound
 			continue
 		}
 
@@ -256,7 +264,7 @@ func (c *Config) Get(keys ...string) (ret *Result) {
 		kvPair, _, err := c.kv.Get(k, nil)
 		ret.g = gjson.ParseBytes(kvPair.Value)
 		ret.k = strings.TrimSuffix(strings.TrimPrefix(path, c.prefix+"/"), "/")
-		ret.err = err
+		ret.err = fmt.Errorf("get fail: %w", err)
 		break
 	}
 
@@ -272,22 +280,24 @@ func (c *Config) Get(keys ...string) (ret *Result) {
 // Delete ...
 func (c *Config) Delete(path string) error {
 	_, err := c.kv.Delete(c.absPath(path), nil)
-	return err
+	if err != nil {
+		return fmt.Errorf("delete fail: %w", err)
+	}
+	return nil
 }
 
 // Watch ...
 func (c *Config) Watch(path string, handler func(*Result)) error {
-	if err := c.checkWatcher(path); err != nil {
-		return err
-	}
-
 	watcher, err := newWatcher(c.absPath(path))
 	if err != nil {
-		return err
+		return fmt.Errorf("watch fail: %w", err)
 	}
 
 	watcher.setHybridHandler(c.prefix, handler)
-	c.addWatcher(path, watcher)
+	err = c.addWatcher(path, watcher)
+	if err != nil {
+		return err
+	}
 
 	go c.watcherLoop(path)
 	return nil

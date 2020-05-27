@@ -2,6 +2,7 @@ package kv
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -19,7 +20,6 @@ func newWatcher(path string) (*watcher, error) {
 	return &watcher{
 		Plan:       wp,
 		lastValues: make(map[string][]byte),
-		stopChan:   make(chan bool, 1),
 		err:        make(chan error, 1),
 	}, nil
 }
@@ -28,7 +28,7 @@ type watcher struct {
 	*watch.Plan
 	lastValues    map[string][]byte
 	hybridHandler watch.HybridHandlerFunc
-	stopChan      chan bool
+	stopChan      chan interface{}
 	err           chan error
 	sync.RWMutex
 }
@@ -77,6 +77,7 @@ func (w *watcher) setHybridHandler(prefix string, handler func(*Result)) {
 }
 
 func (w *watcher) run(address string, conf *api.Config) error {
+	w.stopChan = make(chan interface{})
 	w.Plan.HybridHandler = w.hybridHandler
 
 	go func() {
@@ -85,7 +86,7 @@ func (w *watcher) run(address string, conf *api.Config) error {
 
 	select {
 	case err := <-w.err:
-		return err
+		return fmt.Errorf("run fail: %w", err)
 	case <-w.stopChan:
 		w.Stop()
 		return nil
@@ -93,5 +94,5 @@ func (w *watcher) run(address string, conf *api.Config) error {
 }
 
 func (w *watcher) stop() {
-	w.stopChan <- true
+	close(w.stopChan)
 }
