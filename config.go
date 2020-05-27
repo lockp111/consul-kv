@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/consul/api"
-	log "github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
 )
 
@@ -20,7 +19,7 @@ func NewConfig(opts ...Option) *Config {
 	c := &Config{
 		conf:     api.DefaultConfig(),
 		watchers: make(map[string]*watcher),
-		loger:    log.New(),
+		logger:   NewLogger(),
 	}
 
 	for _, o := range opts {
@@ -61,10 +60,10 @@ func WithToken(token string) Option {
 	}
 }
 
-// WithLoger ...
-func WithLoger(loger *log.Logger) Option {
+// Withlogger ...
+func Withlogger(logger Logger) Option {
 	return func(c *Config) {
-		c.loger = loger
+		c.logger = logger
 	}
 }
 
@@ -74,7 +73,7 @@ type Config struct {
 	kv       *api.KV
 	conf     *api.Config
 	watchers map[string]*watcher
-	loger    *log.Logger
+	logger   Logger
 	sync.RWMutex
 }
 
@@ -121,7 +120,7 @@ func (c *Config) cleanWatcher() {
 	defer c.Unlock()
 
 	for k, w := range c.watchers {
-		w.Stop()
+		w.stop()
 		delete(c.watchers, k)
 	}
 }
@@ -139,27 +138,27 @@ func (c *Config) getAllWatchers() []*watcher {
 }
 
 func (c *Config) watcherLoop(path string) {
-	c.loger.WithField("path", path).Info("watcher start...")
+	c.logger.Info("watcher start...", "path", path)
 
 	w := c.getWatcher(path)
 	if w == nil {
-		c.loger.WithField("path", path).Error("watcher not found")
+		c.logger.Error("watcher not found", "path", path)
 		return
 	}
 
 	for {
 		if err := w.run(c.conf.Address, c.conf); err != nil {
-			c.loger.WithField("path", path).WithError(err).Warning("watcher connect error")
+			c.logger.Warn("watcher connect error", "path", path, "error", err)
 			time.Sleep(time.Second * 3)
 		}
 
 		w = c.getWatcher(path)
 		if w == nil {
-			c.loger.WithField("path", path).Info("watcher stop")
+			c.logger.Info("watcher stop", "path", path)
 			return
 		}
 
-		c.loger.WithField("path", path).Warning("watcher reconnect...")
+		c.logger.Warn("watcher reconnect...", "path", path)
 	}
 }
 
@@ -316,11 +315,10 @@ func (c *Config) StopWatch(path ...string) {
 	for _, p := range path {
 		wp := c.getWatcher(p)
 		if wp == nil {
-			c.loger.WithField("path", p).Info("watcher already stop")
-			return
+			c.logger.Info("watcher already stop", "path", p)
+			continue
 		}
 
-		c.loger.WithField("path", p).Info("watcher stopping...")
 		c.removeWatcher(p)
 		wp.stop()
 		for !wp.IsStopped() {
