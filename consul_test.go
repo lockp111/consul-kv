@@ -42,7 +42,7 @@ func TestGet(t *testing.T) {
 		return
 	}
 
-	if ret.Get("Test").String() != "put2" {
+	if ret.String() != "put2" {
 		t.Error("get value error")
 	}
 }

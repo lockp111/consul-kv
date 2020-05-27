@@ -264,7 +264,10 @@ func (c *Config) Get(keys ...string) (ret *Result) {
 		kvPair, _, err := c.kv.Get(k, nil)
 		ret.g = gjson.ParseBytes(kvPair.Value)
 		ret.k = strings.TrimSuffix(strings.TrimPrefix(path, c.prefix+"/"), "/")
-		ret.err = fmt.Errorf("get fail: %w", err)
+		if err != nil {
+			err = fmt.Errorf("get fail: %w", err)
+		}
+		ret.err = err
 		break
 	}
 
