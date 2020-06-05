@@ -8,7 +8,7 @@ func Init(opts ...Option) error {
 		o(kvConf)
 	}
 
-	return kvConf.Connect()
+	return kvConf.Init()
 }
 
 // SetOptions ...
@@ -17,7 +17,7 @@ func SetOptions(opts ...Option) error {
 		o(kvConf)
 	}
 
-	return kvConf.reconnect()
+	return kvConf.reset()
 }
 
 // Put ...

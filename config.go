@@ -194,18 +194,18 @@ func (c *Config) list() ([]string, error) {
 	return list, nil
 }
 
-func (c *Config) reconnect() error {
+func (c *Config) reset() error {
 	watchMap := c.getAllWatchers()
 
 	for _, w := range watchMap {
 		w.stop()
 	}
 
-	return c.Connect()
+	return c.Init()
 }
 
-// Connect ...
-func (c *Config) Connect() error {
+// Init ...
+func (c *Config) Init() error {
 	client, err := api.NewClient(c.conf)
 	if err != nil {
 		return fmt.Errorf("connect fail: %w", err)
