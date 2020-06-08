@@ -13,7 +13,7 @@ import (
 func main() {
 	var err error
 	cli := kv.NewConfig(kv.WithPrefix("kvTest"))
-	err = cli.Connect()
+	err = cli.Init()
 	if err != nil {
 		log.Fatalln(err)
 	}

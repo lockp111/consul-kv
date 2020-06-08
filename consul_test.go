@@ -10,7 +10,7 @@ var s *Config
 func init() {
 	var err error
 	s = NewConfig(WithPrefix("kvTest"))
-	err = s.Connect()
+	err = s.Init()
 	if err != nil {
 		log.Fatalln(err)
 	}
