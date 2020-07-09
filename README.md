@@ -20,9 +20,9 @@ conf := NewConfig(
 
 ```
 
-### Connect
+### Init
 ```golang
-if err := conf.Connect();err !=nil {
+if err := conf.Init();err !=nil {
     return err
 }
 ```

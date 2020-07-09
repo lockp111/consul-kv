@@ -208,7 +208,7 @@ func (c *Config) reset() error {
 func (c *Config) Init() error {
 	client, err := api.NewClient(c.conf)
 	if err != nil {
-		return fmt.Errorf("connect fail: %w", err)
+		return fmt.Errorf("init fail: %w", err)
 	}
 
 	c.kv = client.KV()
