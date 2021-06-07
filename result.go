@@ -9,9 +9,9 @@ import (
 
 // Result ...
 type Result struct {
-	g   gjson.Result
-	k   string
-	err error
+	err  error
+	key  string
+	data gjson.Result
 }
 
 // Err ...
@@ -21,13 +21,13 @@ func (r *Result) Err() error {
 
 // Get ...
 func (r *Result) Get(path string) *Result {
-	r.g = r.g.Get(path)
+	r.data = r.data.Get(path)
 	return r
 }
 
 // Scan ...
 func (r *Result) Scan(x interface{}) error {
-	return json.Unmarshal([]byte(r.g.Raw), x)
+	return json.Unmarshal([]byte(r.data.Raw), x)
 }
 
 // Float ...
@@ -37,11 +37,11 @@ func (r *Result) Float(defaultValue ...float64) float64 {
 		df = defaultValue[0]
 	}
 
-	if !r.g.Exists() {
+	if !r.data.Exists() {
 		return df
 	}
 
-	return r.g.Float()
+	return r.data.Float()
 }
 
 // Int ...
@@ -51,11 +51,11 @@ func (r *Result) Int(defaultValue ...int64) int64 {
 		df = defaultValue[0]
 	}
 
-	if !r.g.Exists() {
+	if !r.data.Exists() {
 		return df
 	}
 
-	return r.g.Int()
+	return r.data.Int()
 }
 
 // Uint ...
@@ -65,11 +65,11 @@ func (r *Result) Uint(defaultValue ...uint64) uint64 {
 		df = defaultValue[0]
 	}
 
-	if !r.g.Exists() {
+	if !r.data.Exists() {
 		return df
 	}
 
-	return r.g.Uint()
+	return r.data.Uint()
 }
 
 // Bool ...
@@ -79,11 +79,11 @@ func (r *Result) Bool(defaultValue ...bool) bool {
 		df = defaultValue[0]
 	}
 
-	if !r.g.Exists() {
+	if !r.data.Exists() {
 		return df
 	}
 
-	return r.g.Bool()
+	return r.data.Bool()
 }
 
 // Bytes ...
@@ -93,11 +93,11 @@ func (r *Result) Bytes(defaultValue ...[]byte) []byte {
 		df = defaultValue[0]
 	}
 
-	if !r.g.Exists() {
+	if !r.data.Exists() {
 		return df
 	}
 
-	return []byte(r.g.Raw)
+	return []byte(r.data.Raw)
 }
 
 // String
@@ -107,11 +107,11 @@ func (r *Result) String(defaultValue ...string) string {
 		df = defaultValue[0]
 	}
 
-	if !r.g.Exists() {
+	if !r.data.Exists() {
 		return df
 	}
 
-	return r.g.String()
+	return r.data.String()
 }
 
 // Time ...
@@ -121,14 +121,14 @@ func (r *Result) Time(defaultValue ...time.Time) time.Time {
 		df = defaultValue[0]
 	}
 
-	if !r.g.Exists() {
+	if !r.data.Exists() {
 		return df
 	}
 
-	return r.g.Time()
+	return r.data.Time()
 }
 
 // Key ...
 func (r *Result) Key() string {
-	return r.k
+	return r.key
 }

@@ -68,8 +68,8 @@ func (w *watcher) setHybridHandler(prefix string, handler func(*Result)) {
 				continue
 			}
 
-			ret.g = gjson.ParseBytes(k.Value)
-			ret.k = path
+			ret.data = gjson.ParseBytes(k.Value)
+			ret.key = path
 			w.updateValue(path, k.Value)
 			handler(ret)
 		}

@@ -69,11 +69,11 @@ func Withlogger(logger Logger) Option {
 
 // Config ...
 type Config struct {
-	prefix   string
+	logger   Logger
 	kv       *api.KV
 	conf     *api.Config
 	watchers map[string]*watcher
-	logger   Logger
+	prefix   string
 	sync.RWMutex
 }
 
@@ -261,8 +261,8 @@ func (c *Config) Get(keys ...string) (ret *Result) {
 		}
 
 		kvPair, _, err := c.kv.Get(k, nil)
-		ret.g = gjson.ParseBytes(kvPair.Value)
-		ret.k = strings.TrimSuffix(strings.TrimPrefix(path, c.prefix+"/"), "/")
+		ret.data = gjson.ParseBytes(kvPair.Value)
+		ret.key = strings.TrimSuffix(strings.TrimPrefix(path, c.prefix+"/"), "/")
 		if err != nil {
 			err = fmt.Errorf("get fail: %w", err)
 		}
@@ -274,8 +274,8 @@ func (c *Config) Get(keys ...string) (ret *Result) {
 		return
 	}
 
-	ret.g = ret.g.Get(strings.Join(fields, "."))
-	ret.k += "/" + strings.Join(fields, "/")
+	ret.data = ret.data.Get(strings.Join(fields, "."))
+	ret.key += "/" + strings.Join(fields, "/")
 	return
 }
 
