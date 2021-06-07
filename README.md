@@ -116,4 +116,4 @@ conf.StopWatch()
 
 ## Next Features:
 - Distributed lock
-- Transactions
+- Transaction
