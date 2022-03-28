@@ -26,7 +26,7 @@ func (r *Result) Get(path string) *Result {
 }
 
 // Scan ...
-func (r *Result) Scan(x interface{}) error {
+func (r *Result) Scan(x any) error {
 	return json.Unmarshal([]byte(r.data.Raw), x)
 }
 
