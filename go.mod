@@ -22,5 +22,5 @@ require (
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
-	golang.org/x/sys v0.0.0-20220327210214-530d0810a4d0 // indirect
+	golang.org/x/sys v0.1.0 // indirect
 )
