@@ -12,7 +12,7 @@ import (
 )
 
 func newWatcher(path string) (*watcher, error) {
-	wp, err := watch.Parse(map[string]interface{}{"type": "keyprefix", "prefix": path})
+	wp, err := watch.Parse(map[string]any{"type": "keyprefix", "prefix": path})
 	if err != nil {
 		return nil, err
 	}
@@ -25,12 +25,12 @@ func newWatcher(path string) (*watcher, error) {
 }
 
 type watcher struct {
+	sync.RWMutex
 	*watch.Plan
 	lastValues    map[string][]byte
 	hybridHandler watch.HybridHandlerFunc
-	stopChan      chan interface{}
+	stopChan      chan struct{}
 	err           chan error
-	sync.RWMutex
 }
 
 func (w *watcher) getValue(path string) []byte {
@@ -77,7 +77,7 @@ func (w *watcher) setHybridHandler(prefix string, handler func(*Result)) {
 }
 
 func (w *watcher) run(address string, conf *api.Config) error {
-	w.stopChan = make(chan interface{})
+	w.stopChan = make(chan struct{})
 	w.Plan.HybridHandler = w.hybridHandler
 
 	go func() {

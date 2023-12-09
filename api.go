@@ -21,7 +21,7 @@ func SetOptions(opts ...Option) error {
 }
 
 // Put ...
-func Put(path string, value interface{}) error {
+func Put(path string, value any) error {
 	return kvConf.Put(path, value)
 }
 

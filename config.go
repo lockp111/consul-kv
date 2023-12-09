@@ -69,12 +69,12 @@ func Withlogger(logger Logger) Option {
 
 // Config ...
 type Config struct {
+	sync.RWMutex
 	logger   Logger
 	kv       *api.KV
 	conf     *api.Config
 	watchers map[string]*watcher
 	prefix   string
-	sync.RWMutex
 }
 
 // CheckWatcher ...
@@ -216,7 +216,7 @@ func (c *Config) Init() error {
 }
 
 // Put ...
-func (c *Config) Put(path string, value interface{}) error {
+func (c *Config) Put(path string, value any) error {
 	var (
 		data []byte
 		err  error
