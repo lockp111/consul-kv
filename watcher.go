@@ -25,12 +25,12 @@ func newWatcher(path string) (*watcher, error) {
 }
 
 type watcher struct {
-	sync.RWMutex
 	*watch.Plan
 	lastValues    map[string][]byte
 	hybridHandler watch.HybridHandlerFunc
 	stopChan      chan struct{}
 	err           chan error
+	sync.RWMutex
 }
 
 func (w *watcher) getValue(path string) []byte {
